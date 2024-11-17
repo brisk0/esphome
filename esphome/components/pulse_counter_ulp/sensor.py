@@ -97,6 +97,8 @@ async def to_code(config):
     esp32.add_idf_sdkconfig_option("CONFIG_ULP_COPROC_ENABLED", True)
     esp32.add_idf_sdkconfig_option("CONFIG_ULP_COPROC_TYPE_FSM", True)
     esp32.add_idf_sdkconfig_option("CONFIG_ULP_COPROC_RESERVE_MEM", 1024)
+    esp32.add_idf_sdkconfig_option("CONFIG_ESP32S3_ULP_COPROC_ENABLED", True)
+    esp32.add_idf_sdkconfig_option("CONFIG_ESP32S3_ULP_COPROC_RESERVE_MEM", 1024)
     var = await sensor.new_sensor(config)
     await cg.register_component(var, config)
 
