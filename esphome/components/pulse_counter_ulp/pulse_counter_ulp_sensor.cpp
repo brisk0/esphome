@@ -93,6 +93,17 @@ UlpProgram::State UlpProgram::peek_state() const {
           .run_count_ = run_count};
 }
 
+
+float PulseCounterUlpSensor::get_setup_priority() const {
+  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED) {
+    return setup_priority::DATA;
+  }
+  else {
+    /* In case of deep sleep wakup, we need to delay sending new values until we have a connection */
+    return setup_priority::AFTER_CONNECTION;
+  }
+}
+
 void PulseCounterUlpSensor::setup() {
   ESP_LOGCONFIG(TAG, "Setting up pulse counter '%s'...", this->name_.c_str());
 
