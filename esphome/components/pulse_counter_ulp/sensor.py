@@ -7,6 +7,7 @@ import esphome.config_validation as cv
 from esphome.const import (
     CONF_COUNT_MODE,
     CONF_DEBOUNCE,
+    CONF_EDGES_WAKEUP,
     CONF_FALLING_EDGE,
     CONF_ID,
     CONF_PIN,
@@ -124,6 +125,7 @@ async def to_code(config):
     cg.add(var.set_rising_edge_mode(count[CONF_RISING_EDGE]))
     cg.add(var.set_falling_edge_mode(count[CONF_FALLING_EDGE]))
     cg.add(var.set_sleep_duration(config[CONF_SLEEP_DURATION]))
+    cg.add(var.set_edges_wakeup(config[CONF_EDGES_WAKEUP]))
     cg.add(var.set_debounce(config[CONF_DEBOUNCE]))
 
     if CONF_TOTAL in config:

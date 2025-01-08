@@ -51,13 +51,21 @@ std::unique_ptr<UlpProgram> UlpProgram::start(const Config &config) {
 
   /* Initialize variables in ULP program.
    * Note that the ULP reads only the lower 16 bits of these variables.  */
+  ulp_rising_edge_en = config.rising_edge_mode_ != CountMode::DISABLE;
   ulp_rising_edge_count = 0;
+  ulp_falling_edge_en = config.falling_edge_mode_ != CountMode::DISABLE;
   ulp_falling_edge_count = 0;
   ulp_run_count = 0;
   ulp_debounce_counter = 3;
+  ulp_edges_wakeup = config.edges_wakeup_ > 0 ? config.edges_wakeup_ : std::numeric_limits<uint16_t>::max();
   ulp_debounce_max_count = config.debounce_;
   ulp_next_edge = static_cast<uint16_t>(!config.pin_->digital_read());
   ulp_io_number = rtcio_num; /* map from GPIO# to RTC_IO# */
+
+  /* If pin is inverted, we need to swap activating detection of rising / falling edges */
+  if (config.pin_->is_inverted()) {
+    std::swap(ulp_rising_edge_en, ulp_falling_edge_en);
+  }
 
   /* Initialize selected GPIO as RTC IO, enable input */
   rtc_gpio_init(gpio_num);
@@ -121,6 +129,11 @@ void PulseCounterUlpSensor::setup() {
     this->last_time_ = clock::now() - state.run_count_ * (mean_exec_time * microseconds{1});
   }
 
+  /* Enable wakeup from ulp */
+  if (this->config_.edges_wakeup_ > 0) {
+    ESP_ERROR_CHECK( esp_sleep_enable_ulp_wakeup() );
+  }
+
   if (!this->storage_) {
     this->mark_failed();
     return;
@@ -144,6 +157,7 @@ void PulseCounterUlpSensor::dump_config() {
   ESP_LOGCONFIG(TAG, "  Falling Edge: %s", to_string(this->config_.falling_edge_mode_));
   ESP_LOGCONFIG(TAG, "  Sleep Duration: %" PRIu32 " µs", this->config_.sleep_duration_ / microseconds{1});
   ESP_LOGCONFIG(TAG, "  Debounce: %" PRIu16, this->config_.debounce_);
+  ESP_LOGCONFIG(TAG, "  Edges Wakeup: %" PRIu16, this->config_.edges_wakeup_);
   LOG_UPDATE_INTERVAL(this);
 }
 
