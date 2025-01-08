@@ -67,8 +67,8 @@ CONFIG_SCHEMA = cv.All(
             ): cv.All(
                 cv.Schema(
                     {
-                        cv.Required(CONF_RISING_EDGE): COUNT_MODE_SCHEMA,
-                        cv.Required(CONF_FALLING_EDGE): COUNT_MODE_SCHEMA,
+                        cv.Optional(CONF_RISING_EDGE, "INCREMENT"): COUNT_MODE_SCHEMA,
+                        cv.Optional(CONF_FALLING_EDGE, "DISABLE"): COUNT_MODE_SCHEMA,
                     }
                 ),
                 validate_count_mode,
