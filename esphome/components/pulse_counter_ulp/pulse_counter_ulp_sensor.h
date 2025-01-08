@@ -47,6 +47,8 @@ class PulseCounterUlpSensor : public sensor::Sensor, public PollingComponent {
   void set_debounce(uint16_t debounce) { this->config_.debounce_ = debounce; }
   void set_total_sensor(sensor::Sensor *total_sensor) { total_sensor_ = total_sensor; }
 
+  void set_total_pulses(uint32_t pulses);
+
   void setup() override;
   void update() override;
   // Messages sent before WiFi is established are lost - including the vital

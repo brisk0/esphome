@@ -127,6 +127,16 @@ void PulseCounterUlpSensor::setup() {
   }
 }
 
+void PulseCounterUlpSensor::set_total_pulses(uint32_t pulses) {
+  if (this->total_sensor_ != nullptr) {
+    ESP_LOGD(TAG, "'%s': Reset pulses of total count to pulses: %d", this->get_name().c_str(),
+            pulses);
+
+    pulse_count_persist = std::max(static_cast<int>(pulses), 0);
+    this->total_sensor_->publish_state(pulses);
+  }
+}
+
 void PulseCounterUlpSensor::dump_config() {
   LOG_SENSOR("", "Pulse Counter", this);
   LOG_PIN("  Pin: ", this->config_.pin_);

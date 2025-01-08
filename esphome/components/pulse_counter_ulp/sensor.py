@@ -1,6 +1,6 @@
 import os
 
-from esphome import pins
+from esphome import automation, pins
 import esphome.codegen as cg
 from esphome.components import esp32, sensor
 import esphome.config_validation as cv
@@ -8,6 +8,7 @@ from esphome.const import (
     CONF_COUNT_MODE,
     CONF_DEBOUNCE,
     CONF_FALLING_EDGE,
+    CONF_ID,
     CONF_PIN,
     CONF_RISING_EDGE,
     CONF_SLEEP_DURATION,
@@ -32,6 +33,10 @@ COUNT_MODE_SCHEMA = cv.enum(COUNT_MODES, upper=True)
 
 PulseCounterUlpSensor = pulse_counter_ulp_ns.class_(
     "PulseCounterUlpSensor", sensor.Sensor, cg.PollingComponent
+)
+
+SetTotalPulsesAction = pulse_counter_ulp_ns.class_(
+    "SetTotalPulsesAction", automation.Action
 )
 
 
@@ -124,3 +129,21 @@ async def to_code(config):
     if CONF_TOTAL in config:
         sens = await sensor.new_sensor(config[CONF_TOTAL])
         cg.add(var.set_total_sensor(sens))
+
+
+@automation.register_action(
+    "pulse_counter_ulp.set_total_pulses",
+    SetTotalPulsesAction,
+    cv.Schema(
+        {
+            cv.Required(CONF_ID): cv.use_id(PulseCounterUlpSensor),
+            cv.Required(CONF_VALUE): cv.templatable(cv.uint32_t),
+        }
+    ),
+)
+async def set_total_action_to_code(config, action_id, template_arg, args):
+    paren = await cg.get_variable(config[CONF_ID])
+    var = cg.new_Pvariable(action_id, template_arg, paren)
+    template_ = await cg.templatable(config[CONF_VALUE], args, int)
+    cg.add(var.set_total_pulses(template_))
+    return var
