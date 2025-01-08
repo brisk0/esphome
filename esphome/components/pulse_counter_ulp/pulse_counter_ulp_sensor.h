@@ -29,11 +29,9 @@ class UlpProgram {
     uint16_t rising_edge_count_;
     uint16_t falling_edge_count_;
     uint16_t run_count_;
-    microseconds mean_exec_time_;
   };
   State pop_state();
   State peek_state() const;
-  void set_mean_exec_time(microseconds mean_exec_time);
 
   static std::unique_ptr<UlpProgram> start(const Config &config);
 };

@@ -22,7 +22,6 @@ extern uint32_t ulp_entry;
 extern uint32_t ulp_falling;
 extern uint32_t ulp_falling_edge_count;
 extern uint32_t ulp_io_number;
-extern uint32_t ulp_mean_exec_time;
 extern uint32_t ulp_next_edge;
 extern uint32_t ulp_rising;
 extern uint32_t ulp_rising_edge_count;
