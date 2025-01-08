@@ -45,6 +45,7 @@ class PulseCounterUlpSensor : public sensor::Sensor, public PollingComponent {
   void set_falling_edge_mode(CountMode mode) { this->config_.falling_edge_mode_ = mode; }
   void set_sleep_duration(uint32_t duration_us) { this->config_.sleep_duration_ = duration_us * microseconds{1}; }
   void set_debounce(uint16_t debounce) { this->config_.debounce_ = debounce; }
+  void set_total_sensor(sensor::Sensor *total_sensor) { total_sensor_ = total_sensor; }
 
   void setup() override;
   void update() override;
@@ -54,6 +55,7 @@ class PulseCounterUlpSensor : public sensor::Sensor, public PollingComponent {
   void dump_config() override;
 
  protected:
+  sensor::Sensor *total_sensor_{nullptr};
   UlpProgram::Config config_{};
   std::unique_ptr<UlpProgram> storage_{};
   clock::time_point last_time_{};

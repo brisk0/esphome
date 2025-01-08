@@ -12,6 +12,7 @@ namespace pulse_counter_ulp {
 
 static const char *const TAG = "pulse_counter_ulp";
 
+RTC_DATA_ATTR int pulse_count_persist = 0;
 RTC_DATA_ATTR int mean_exec_time = 0;
 
 namespace {
@@ -144,22 +145,38 @@ void PulseCounterUlpSensor::update() {
   UlpProgram::State raw = this->storage_->pop_state();
   // Since ULP can't use the GPIOPin abstraction, pin inversion needs to be
   // manually implemented.
-  int32_t pulse_count;
+  int32_t pulse_count_ulp;
   if (this->config_.pin_->is_inverted()) {
-    pulse_count = static_cast<int32_t>(config_.rising_edge_mode_) * raw.falling_edge_count_ +
+    pulse_count_ulp = static_cast<int32_t>(config_.rising_edge_mode_) * raw.falling_edge_count_ +
                   static_cast<int32_t>(config_.falling_edge_mode_) * raw.rising_edge_count_;
   } else {
-    pulse_count = static_cast<int32_t>(config_.rising_edge_mode_) * raw.rising_edge_count_ +
+    pulse_count_ulp = static_cast<int32_t>(config_.rising_edge_mode_) * raw.rising_edge_count_ +
                   static_cast<int32_t>(config_.falling_edge_mode_) * raw.falling_edge_count_;
   }
+
   clock::time_point now = clock::now();
   clock::duration interval = now - this->last_time_;
   if (interval != clock::duration::zero()) {
     mean_exec_time = static_cast<int>((std::chrono::duration_cast<microseconds>(interval / raw.run_count_)) / microseconds{1});
-    float value = std::chrono::minutes{1} * static_cast<float>(pulse_count) / interval;  // pulses per minute
-    ESP_LOGD(TAG, "'%s': Retrieved counter: %" PRIu32 " pulses at %0.2f pulses/min", this->get_name().c_str(),
-             pulse_count, value);
+    float value = std::chrono::minutes{1} * static_cast<float>(pulse_count_ulp) / interval;  // pulses per minute
+    ESP_LOGD(TAG, "'%s': Retrieved counter: %d pulses at %0.2f pulses/min", this->get_name().c_str(),
+             pulse_count_ulp, value);
     this->publish_state(value);
+  }
+
+  if (this->total_sensor_ != nullptr) {
+
+    // Get new overall value
+    const int32_t pulse_count = pulse_count_persist + pulse_count_ulp;
+
+    // Update persistent counter
+    pulse_count_persist = (int)pulse_count;
+
+    // publish new state
+    ESP_LOGD(TAG, "'%s': Pulses from ULP: %d; Overall pulses: %d", this->get_name().c_str(),
+            pulse_count_ulp, pulse_count);
+
+    this->total_sensor_->publish_state(pulse_count);
   }
 
   this->last_time_ = now;

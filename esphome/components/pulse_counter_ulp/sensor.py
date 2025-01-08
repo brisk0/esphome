@@ -11,9 +11,13 @@ from esphome.const import (
     CONF_PIN,
     CONF_RISING_EDGE,
     CONF_SLEEP_DURATION,
+    CONF_TOTAL,
+    CONF_VALUE,
     ICON_PULSE,
     STATE_CLASS_MEASUREMENT,
+    STATE_CLASS_TOTAL_INCREASING,
     UNIT_PULSES_PER_MINUTE,
+    UNIT_PULSES,
 )
 
 pulse_counter_ulp_ns = cg.esphome_ns.namespace("pulse_counter_ulp")
@@ -77,6 +81,13 @@ CONFIG_SCHEMA = cv.All(
                 CONF_SLEEP_DURATION, default="20000us"
             ): cv.positive_time_period_microseconds,
             cv.Optional(CONF_DEBOUNCE, default=3): cv.positive_int,
+            cv.Optional(CONF_EDGES_WAKEUP, default=0): cv.positive_int,
+            cv.Optional(CONF_TOTAL): sensor.sensor_schema(
+                unit_of_measurement=UNIT_PULSES,
+                icon=ICON_PULSE,
+                accuracy_decimals=0,
+                state_class=STATE_CLASS_TOTAL_INCREASING,
+            ),
         },
     )
     .extend(cv.polling_component_schema("60s")),
@@ -109,3 +120,7 @@ async def to_code(config):
     cg.add(var.set_falling_edge_mode(count[CONF_FALLING_EDGE]))
     cg.add(var.set_sleep_duration(config[CONF_SLEEP_DURATION]))
     cg.add(var.set_debounce(config[CONF_DEBOUNCE]))
+
+    if CONF_TOTAL in config:
+        sens = await sensor.new_sensor(config[CONF_TOTAL])
+        cg.add(var.set_total_sensor(sens))
