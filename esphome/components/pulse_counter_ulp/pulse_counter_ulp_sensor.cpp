@@ -97,17 +97,13 @@ UlpProgram::State UlpProgram::peek_state() const {
   auto rising_edge_count = static_cast<uint16_t>(ulp_rising_edge_count);
   auto falling_edge_count = static_cast<uint16_t>(ulp_falling_edge_count);
   auto run_count = static_cast<uint16_t>(ulp_run_count);
-  return {.rising_edge_count_ = rising_edge_count,
-          .falling_edge_count_ = falling_edge_count,
-          .run_count_ = run_count};
+  return {.rising_edge_count_ = rising_edge_count, .falling_edge_count_ = falling_edge_count, .run_count_ = run_count};
 }
-
 
 float PulseCounterUlpSensor::get_setup_priority() const {
   if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED) {
     return setup_priority::DATA;
-  }
-  else {
+  } else {
     /* In case of deep sleep wakup, we need to delay sending new values until we have a connection */
     return setup_priority::AFTER_CONNECTION;
   }
@@ -131,7 +127,7 @@ void PulseCounterUlpSensor::setup() {
 
   /* Enable wakeup from ulp */
   if (this->config_.edges_wakeup_ > 0) {
-    ESP_ERROR_CHECK( esp_sleep_enable_ulp_wakeup() );
+    ESP_ERROR_CHECK(esp_sleep_enable_ulp_wakeup());
   }
 
   if (!this->storage_) {
@@ -142,8 +138,7 @@ void PulseCounterUlpSensor::setup() {
 
 void PulseCounterUlpSensor::set_total_pulses(uint32_t pulses) {
   if (this->total_sensor_ != nullptr) {
-    ESP_LOGD(TAG, "'%s': Reset pulses of total count to pulses: %d", this->get_name().c_str(),
-            pulses);
+    ESP_LOGD(TAG, "'%s': Reset pulses of total count to pulses: %d", this->get_name().c_str(), pulses);
 
     pulse_count_persist = std::max(static_cast<int>(pulses), 0);
     this->total_sensor_->publish_state(pulses);
@@ -172,33 +167,33 @@ void PulseCounterUlpSensor::update() {
   int32_t pulse_count_ulp;
   if (this->config_.pin_->is_inverted()) {
     pulse_count_ulp = static_cast<int32_t>(config_.rising_edge_mode_) * raw.falling_edge_count_ +
-                  static_cast<int32_t>(config_.falling_edge_mode_) * raw.rising_edge_count_;
+                      static_cast<int32_t>(config_.falling_edge_mode_) * raw.rising_edge_count_;
   } else {
     pulse_count_ulp = static_cast<int32_t>(config_.rising_edge_mode_) * raw.rising_edge_count_ +
-                  static_cast<int32_t>(config_.falling_edge_mode_) * raw.falling_edge_count_;
+                      static_cast<int32_t>(config_.falling_edge_mode_) * raw.falling_edge_count_;
   }
 
   clock::time_point now = clock::now();
   clock::duration interval = now - this->last_time_;
   if (interval != clock::duration::zero()) {
-    mean_exec_time = static_cast<int>((std::chrono::duration_cast<microseconds>(interval / raw.run_count_)) / microseconds{1});
+    mean_exec_time =
+        static_cast<int>((std::chrono::duration_cast<microseconds>(interval / raw.run_count_)) / microseconds{1});
     float value = std::chrono::minutes{1} * static_cast<float>(pulse_count_ulp) / interval;  // pulses per minute
-    ESP_LOGD(TAG, "'%s': Retrieved counter: %d pulses at %0.2f pulses/min", this->get_name().c_str(),
-             pulse_count_ulp, value);
+    ESP_LOGD(TAG, "'%s': Retrieved counter: %d pulses at %0.2f pulses/min", this->get_name().c_str(), pulse_count_ulp,
+             value);
     this->publish_state(value);
   }
 
   if (this->total_sensor_ != nullptr) {
-
     // Get new overall value
     const int32_t pulse_count = pulse_count_persist + pulse_count_ulp;
 
     // Update persistent counter
-    pulse_count_persist = (int)pulse_count;
+    pulse_count_persist = (int) pulse_count;
 
     // publish new state
-    ESP_LOGD(TAG, "'%s': Pulses from ULP: %d; Overall pulses: %d", this->get_name().c_str(),
-            pulse_count_ulp, pulse_count);
+    ESP_LOGD(TAG, "'%s': Pulses from ULP: %d; Overall pulses: %d", this->get_name().c_str(), pulse_count_ulp,
+             pulse_count);
 
     this->total_sensor_->publish_state(pulse_count);
   }

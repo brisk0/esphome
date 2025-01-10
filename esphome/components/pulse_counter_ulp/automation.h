@@ -20,5 +20,5 @@ template<typename... Ts> class SetTotalPulsesAction : public Action<Ts...> {
   PulseCounterUlpSensor *pulse_counter_;
 };
 
-}  // namespace pulse_counter
+}  // namespace pulse_counter_ulp
 }  // namespace esphome
