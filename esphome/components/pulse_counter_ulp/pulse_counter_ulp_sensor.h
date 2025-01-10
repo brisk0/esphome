@@ -24,16 +24,15 @@ class UlpProgram {
     CountMode falling_edge_mode_;
     microseconds sleep_duration_;
     uint16_t debounce_;
+    uint16_t edges_wakeup_;
   };
   struct State {
     uint16_t rising_edge_count_;
     uint16_t falling_edge_count_;
     uint16_t run_count_;
-    microseconds mean_exec_time_;
   };
   State pop_state();
   State peek_state() const;
-  void set_mean_exec_time(microseconds mean_exec_time);
 
   static std::unique_ptr<UlpProgram> start(const Config &config);
 };
@@ -47,15 +46,20 @@ class PulseCounterUlpSensor : public sensor::Sensor, public PollingComponent {
   void set_falling_edge_mode(CountMode mode) { this->config_.falling_edge_mode_ = mode; }
   void set_sleep_duration(uint32_t duration_us) { this->config_.sleep_duration_ = duration_us * microseconds{1}; }
   void set_debounce(uint16_t debounce) { this->config_.debounce_ = debounce; }
+  void set_edges_wakeup(uint16_t edges_wakeup) { this->config_.edges_wakeup_ = edges_wakeup; }
+  void set_total_sensor(sensor::Sensor *total_sensor) { total_sensor_ = total_sensor; }
+
+  void set_total_pulses(uint32_t pulses);
 
   void setup() override;
   void update() override;
   // Messages sent before WiFi is established are lost - including the vital
   // on-wake-up message
-  float get_setup_priority() const override { return setup_priority::AFTER_WIFI; }
+  float get_setup_priority() const;
   void dump_config() override;
 
  protected:
+  sensor::Sensor *total_sensor_{nullptr};
   UlpProgram::Config config_{};
   std::unique_ptr<UlpProgram> storage_{};
   clock::time_point last_time_{};

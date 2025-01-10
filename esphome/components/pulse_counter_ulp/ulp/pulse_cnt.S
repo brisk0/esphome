@@ -50,9 +50,19 @@ debounce_counter:
 debounce_max_count:
   .long 0
 
+  /* Flag to be one, for detecting rising edges */
+  .global rising_edge_en
+rising_edge_en:
+  .long 0
+
   /* Number of rising signal edges acquired since last read */
   .global rising_edge_count
 rising_edge_count:
+  .long 0
+
+  /* Flag to be one, for detecting falling edges */
+  .global falling_edge_en
+falling_edge_en:
   .long 0
 
   /* Number of falling signal edges acquired since last read */
@@ -70,16 +80,15 @@ run_count:
 edge_count_total:
   .long 0
 
+  /* Number of edges after which main SoC shall be woken up */
+  .global edges_wakeup
+edges_wakeup:
+  .long 0
+
   /* RTC IO number used to sample the input signal.
      Set by main program. */
   .global io_number
 io_number:
-  .long 0
-
-  /* Estimate of how long each execution of the ULP program takes. Managed
-   * entirely by main program, it is only defined here to survive deep sleep */
-  .global mean_exec_time
-mean_exec_time:
   .long 0
 
   /* Code goes into .text section */
@@ -172,20 +181,74 @@ edge_detected:
 
   .global falling
 falling:
+  /* Check if detecting falling edges is enabled */
+  move r3, falling_edge_en
+  ld r2, r3, 0
+  add r2, r2, 0 /* dummy ADD to use "jump if ALU result is zero" */
+  jump wake_up_skip, eq
+
   /* Increment falling_edge_count */
   move r3, falling_edge_count
   ld r2, r3, 0
   add r2, r2, 1
   st r2, r3, 0
-  /* End program */
-  halt
+  jump wake_up
 
   .global rising
 rising:
+  /* Check if detecting rising edges is enabled */
+  move r3, rising_edge_en
+  ld r2, r3, 0
+  add r2, r2, 0 /* dummy ADD to use "jump if ALU result is zero" */
+  jump wake_up_skip, eq
+
   /* Increment rising_edge_count */
   move r3, rising_edge_count
   ld r2, r3, 0
   add r2, r2, 1
   st r2, r3, 0
-  /* End program */
+  jump wake_up
+
+  .global wake_up
+wake_up:
+  /* Check if the system can be woken up. Checking here to not increment
+    edge wait counter while being awake. We want to wake the system after
+    counting the user specified number while being asleep. */
+  READ_RTC_FIELD(RTC_CNTL_LOW_POWER_ST_REG, RTC_CNTL_RDY_FOR_WAKEUP)
+  and r0, r0, 1
+  jump am_awake, eq
+
+  /* Increment edge_count_total */
+  move r2, edge_count_total
+  ld r1, r2, 0
+  add r1, r1, 1
+  st r1, r2, 0
+
+  /* compare with edges_wakeup; wake up if edge_count_total >= edges_wakeup */
+  move r0, edges_wakeup
+  ld r1, r0, 0
+  move r0, edge_count_total
+  ld r2, r0, 0
+  sub r0, r1, r2
+  jumpr wake_up_skip, 0, gt /* jump if edges_wakeup - edge_count_total > 0  */
+
+  .global am_awake
+am_awake:
+
+  /* Reset total edge counter */
+  move r2, 0
+  move r1, edge_count_total
+  st r2, r1, 0
+
+  /* Check if the system can be woken up. Checking again to prevent wake
+    whilen not being asleep */
+  READ_RTC_FIELD(RTC_CNTL_LOW_POWER_ST_REG, RTC_CNTL_RDY_FOR_WAKEUP)
+  and r0, r0, 1
+  jump wake_up_skip, eq
+
+  /* Wake up the SoC, end program */
+  wake
+
+  .global wake_up_skip
+wake_up_skip:
   halt

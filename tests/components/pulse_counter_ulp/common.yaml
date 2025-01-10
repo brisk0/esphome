@@ -8,3 +8,4 @@ sensor:
     sleep_duration: 13ms
     debounce: 4
     update_interval: 15s
+    edges_wakeup: 4
