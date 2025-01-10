@@ -55,7 +55,7 @@ class PulseCounterUlpSensor : public sensor::Sensor, public PollingComponent {
   void update() override;
   // Messages sent before WiFi is established are lost - including the vital
   // on-wake-up message
-  float get_setup_priority() const;
+  float get_setup_priority() const override;
   void dump_config() override;
 
  protected:
