@@ -12,9 +12,6 @@ namespace pulse_counter_ulp {
 
 static const char *const TAG = "pulse_counter_ulp";
 
-RTC_DATA_ATTR int pulse_count_persist = 0;
-RTC_DATA_ATTR int mean_exec_time = 0;
-
 namespace {
 const char *to_string(CountMode count_mode) {
   switch (count_mode) {
@@ -99,6 +96,9 @@ UlpProgram::State UlpProgram::peek_state() const {
   auto run_count = static_cast<uint16_t>(ulp_run_count);
   return {.rising_edge_count_ = rising_edge_count, .falling_edge_count_ = falling_edge_count, .run_count_ = run_count};
 }
+
+int PulseCounterUlpSensor::pulse_count_persist = 0;
+int PulseCounterUlpSensor::mean_exec_time = 0;
 
 float PulseCounterUlpSensor::get_setup_priority() const {
   if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED) {
