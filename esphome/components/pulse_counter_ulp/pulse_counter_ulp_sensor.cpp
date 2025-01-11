@@ -97,8 +97,8 @@ UlpProgram::State UlpProgram::peek_state() const {
   return {.rising_edge_count_ = rising_edge_count, .falling_edge_count_ = falling_edge_count, .run_count_ = run_count};
 }
 
-int PulseCounterUlpSensor::pulse_count_persist = 0;
-int PulseCounterUlpSensor::mean_exec_time = 0;
+RTC_DATA_ATTR int PulseCounterUlpSensor::pulse_count_persist = 0;
+RTC_DATA_ATTR int PulseCounterUlpSensor::mean_exec_time = 0;
 
 float PulseCounterUlpSensor::get_setup_priority() const {
   if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED) {
